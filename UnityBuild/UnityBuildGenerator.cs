@@ -16,6 +16,14 @@ namespace UnityBuild
 			m_targetChunkSize = chunkSize;
 		}
 
+		public void OnEnd()
+		{
+			if( m_nowChunkSize != 0 )
+				createFile();
+
+			m_projManager.Save();
+		}
+
 		public void InsertCppFile( FileInfo cppFile )
 		{
 			if( cppFile.Name.IndexOf( m_genFileName ) == 0 )
@@ -27,23 +35,23 @@ namespace UnityBuild
 			++m_nowChunkSize;
 			if( m_nowChunkSize >= m_targetChunkSize )
 			{
-				CreateFile();
+				createFile();
 			}
 		}
 
-		private void CreateFile()
+		private void createFile()
 		{
-			string targetFullName = m_targetPath + m_genFileName + m_fileCnt + "cpp";
-			System.IO.FileInfo file = new System.IO.FileInfo( targetFullName );
+			//string targetFullName = m_targetPath + m_genFileName + m_fileCnt + "cpp";
+			//System.IO.FileInfo file = new System.IO.FileInfo( targetFullName );
 
-			if( file.Exists == false )
-			{
-				file.Directory.Create();
-				m_projManager.AddFile( file );
-			}
-			System.IO.File.WriteAllText( file.FullName, m_fileText );
+			//if( file.Exists == false )
+			//{
+			//	file.Directory.Create();
+			//	m_projManager.AddFile( file );
+			//}
+			//System.IO.File.WriteAllText( file.FullName, m_fileText );
 
-			++m_fileCnt;
+			//++m_fileCnt;
 		}
 
 		private CppProjectManager m_projManager = null;
