@@ -107,6 +107,20 @@ namespace UnityBuild
 			filterElement.AppendChild( filterText );
 		}
 
+		public void DeleteFile( FileInfo cppFile )
+		{
+			string filePath = cppFile.FullName.Substring( m_projDirPath.Length );
+			//Del File From Proj
+			XmlNode clNode = m_projDoc.SelectSingleNode( $"/ns:Project/ns:ItemGroup/ns:ClCompile[@Include='{filePath}']", m_projNsMng );
+			if( clNode != null )
+				clNode.ParentNode.RemoveChild( clNode );
+			//Del File From Filter
+			clNode = m_filterDoc.SelectSingleNode( $"/ns:Project/ns:ItemGroup/ns:ClCompile[@Include='{filePath}']", m_filterNsMng );
+			if( clNode != null )
+				clNode.ParentNode.RemoveChild( clNode );
+
+		}
+
 		public void MakeFilter( string filterName )
 		{
 			XmlElement root = m_filterDoc.DocumentElement;

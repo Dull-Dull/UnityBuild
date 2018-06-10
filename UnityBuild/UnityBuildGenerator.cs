@@ -16,6 +16,8 @@ namespace UnityBuild
 			m_genFolderPath = Path.Combine( m_projDirPath, m_genFileName );
 			m_targetChunkSize = chunkSize;
 
+			deleteUnityBuildFiles();
+
 			Directory.CreateDirectory( m_genFolderPath );
 			m_projManager.MakeFilter( m_genFileName );
 
@@ -83,6 +85,18 @@ namespace UnityBuild
 				m_fileTextLines.Add( $"#include \"{m_projManager.PreCompiledHeaderName}\"" );
 				m_fileTextLines.Add( "" );
 			}				
+		}
+
+		private void deleteUnityBuildFiles()
+		{
+			DirectoryInfo unityBuildFolder = new DirectoryInfo( m_genFolderPath );
+			FileInfo[] files = unityBuildFolder.GetFiles();
+
+			foreach( FileInfo info in files )
+			{
+				m_projManager.DeleteFile( info );
+				info.Delete();
+			}
 		}
 
 		private CppProjectManager m_projManager = null;
