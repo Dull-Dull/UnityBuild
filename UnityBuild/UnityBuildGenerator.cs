@@ -40,7 +40,7 @@ namespace UnityBuild
 				return;
 
 			m_projManager.UnSetCompile( cppFile );
-			m_fileText += $"#include \"..{cppFile.FullName.Substring( m_projDirPath.Length ) }\"\n";
+			m_fileTextLines.Add( $"#include \"..{cppFile.FullName.Substring( m_projDirPath.Length ) }\"" );
 
 			++m_nowChunkSize;
 			if( m_nowChunkSize >= m_targetChunkSize )
@@ -57,18 +57,21 @@ namespace UnityBuild
 
 			if( m_projManager.IsExist( file ) == false )
 				m_projManager.AddFile( file, m_genFileName );
-
-			System.IO.File.WriteAllText( file.FullName, m_fileText );
+			
+			System.IO.File.WriteAllLines( file.FullName, m_fileTextLines.ToArray() );
 
 			++m_fileCnt;
 		}
 
 		private void initFile()
 		{
-			m_fileText = "";
+			m_fileTextLines.Clear();
 
 			if( m_projManager.UsePreCompiled )
-				m_fileText += $"#include \"{m_projManager.PreCompiledHeaderName}\"\n\n";
+			{
+				m_fileTextLines.Add( $"#include \"{m_projManager.PreCompiledHeaderName}\"" );
+				m_fileTextLines.Add( "" );
+			}				
 		}
 
 		private CppProjectManager m_projManager = null;
@@ -78,7 +81,7 @@ namespace UnityBuild
 		private int m_nowChunkSize = 0;
 
 		private int m_fileCnt = 1;
-		private string m_fileText = "";
+		private List<string> m_fileTextLines = new List<string>();
 
 		private readonly string m_genFileName = "UnityBuild";
 	}
