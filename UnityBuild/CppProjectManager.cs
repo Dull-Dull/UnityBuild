@@ -10,22 +10,22 @@ namespace UnityBuild
 {
 	class CppProjectManager
 	{
-		public CppProjectManager( string projPath )
+		public CppProjectManager( string projDirPath )
 		{
-			m_projPath = projPath;
-			m_projDir = new FileInfo( m_projPath ).Directory.FullName + @"\";
+			m_projDirPath = projDirPath;
+			m_projDir = new FileInfo( m_projDirPath ).Directory.FullName + @"\";
 
-			m_projDoc.Load( m_projPath );
-			m_filterDoc.Load( m_projPath + ".filters" );
+			m_projDoc.Load( m_projDirPath );
+			m_filterDoc.Load( m_projDirPath + ".filters" );
 
 			m_projNsMng = new XmlNamespaceManager( m_projDoc.NameTable );
 			m_projNsMng.AddNamespace( "ns", m_projDoc.DocumentElement.NamespaceURI );
 
 			m_filterNsMng = new XmlNamespaceManager( m_filterDoc.NameTable );
 			m_filterNsMng.AddNamespace( "ns", m_filterDoc.DocumentElement.NamespaceURI );
-
-			makeUnityBuildFolder();
+			
 			getSolutionTypes();
+			getPreCompiled();
 		}
 
 		public void UnSetCompile( FileInfo cppFile )
@@ -38,7 +38,19 @@ namespace UnityBuild
 
 			XmlNodeList exclNodeList = m_projDoc.SelectNodes( $"/ns:Project/ns:ItemGroup[2]/ns:ClCompile[@Include='{result}']/ns:ExcludedFromBuild", m_projNsMng );
 			if( exclNodeList.Count == m_solutionTypes.Count )
-				return;
+			{
+				bool excluded = true;
+				for( int i = 0; i < exclNodeList.Count; ++i )
+				{
+					if( exclNodeList[0].ChildNodes[0].Value != "false" )
+					{
+						excluded = false;
+						break;
+					}
+				}
+				if( excluded == false )
+					return;
+			}
 
 			if( exclNodeList.Count != 0 )
 			{
@@ -58,24 +70,47 @@ namespace UnityBuild
 			}			
 		}
 
-		public void AddFile( FileInfo cppFile )
+		public bool IsExist( FileInfo cppFile )
 		{
+			string filePath = cppFile.FullName.Substring( m_projDir.Length );
+			XmlNode clNode = m_projDoc.SelectSingleNode( $"/ns:Project/ns:ItemGroup[2]/ns:ClCompile[@Include='{filePath}']", m_projNsMng );
 
+			if( clNode == null )
+				return false;
+
+			return true;
 		}
 
-		public void Save()
-		{			
-			m_filterDoc.Save( m_projPath + ".filters" );
-			m_projDoc.Save( m_projPath );
+		public void AddFile( FileInfo cppFile, string filterName )
+		{
+			string filePath = cppFile.FullName.Substring( m_projDir.Length );
+			//Append File To Proj
+			XmlNode itemGroupNode = m_projDoc.SelectSingleNode( "/ns:Project/ns:ItemGroup[2]", m_projNsMng );
+
+			XmlElement clElement = m_projDoc.CreateElement( "ClCompile", m_projDoc.DocumentElement.NamespaceURI );
+			clElement.SetAttribute( "Include", filePath );
+			itemGroupNode.AppendChild( clElement );
+
+			//Append File To Filter
+			itemGroupNode = m_filterDoc.SelectSingleNode( "/ns:Project/ns:ItemGroup[1]", m_filterNsMng );
+
+			clElement = m_filterDoc.CreateElement( "ClCompile", m_filterDoc.DocumentElement.NamespaceURI );
+			itemGroupNode.AppendChild( clElement );
+			clElement.SetAttribute( "Include", filePath );
+
+			XmlElement filterElement = m_filterDoc.CreateElement( "Filter", m_filterDoc.DocumentElement.NamespaceURI );
+			clElement.AppendChild( filterElement );
+
+			XmlText filterText = m_filterDoc.CreateTextNode( filterName );
+			filterElement.AppendChild( filterText );
 		}
 
-
-		private void makeUnityBuildFolder()
+		public void MakeFilter( string filterName )
 		{
 			XmlElement root = m_filterDoc.DocumentElement;
 			XmlNode filterGroupNode = root.ChildNodes[1];
 
-			var node = m_filterDoc.SelectSingleNode( "/ns:Project/ns:ItemGroup[2]/ns:Filter[@Include='UnityBuild']", m_filterNsMng );
+			var node = m_filterDoc.SelectSingleNode( $"/ns:Project/ns:ItemGroup[2]/ns:Filter[@Include='{filterName}']", m_filterNsMng );
 			if( node != null )
 				return;
 
@@ -88,20 +123,63 @@ namespace UnityBuild
 
 			XmlText uidText = m_filterDoc.CreateTextNode( "{" + Guid.NewGuid().ToString() + "}" );
 			uidElem.AppendChild( uidText );
-			
+		}
+
+		public void Save()
+		{			
+			m_filterDoc.Save( m_projDirPath + ".filters" );
+			m_projDoc.Save( m_projDirPath );
+		}
+
+		public bool UsePreCompiled{
+			get
+			{
+				return m_usePreCompiledHeader;
+			}
+		}
+
+		public string PreCompiledHeaderName
+		{
+			get{ return m_preCompiledHeaderFileName; }
+		}
+
+		public string PreCompiledCppName
+		{
+			get { return m_preCompiledCppFileName; }
 		}
 
 		private void getSolutionTypes()
 		{
-			XmlElement root = m_projDoc.DocumentElement;
 			XmlNodeList itemGroupList = m_projDoc.SelectNodes( "/ns:Project/ns:ItemGroup/ns:ProjectConfiguration/@Include", m_projNsMng );
-
-			Console.WriteLine( itemGroupList.Count );
 
 			for( int i = 0; i < itemGroupList.Count; ++i )
 			{
 				m_solutionTypes.Add( itemGroupList[i].Value );
 			}
+		}
+
+		private void getPreCompiled()
+		{
+			XmlNodeList itemGroupNodeList = m_projDoc.SelectNodes( "/ns:Project/ns:ItemDefinitionGroup/ns:ClCompile/ns:PrecompiledHeader[text()='Use']", m_projNsMng );
+			if( itemGroupNodeList.Count == 0 )
+			{
+				m_usePreCompiledHeader = false;
+				return;
+			}
+
+			m_usePreCompiledHeader = true;
+
+			XmlNodeList preCompiledFileNodeList = m_projDoc.SelectNodes( "/ns:Project/ns:ItemDefinitionGroup/ns:ClCompile/ns:PrecompiledHeaderFile/text()", m_projNsMng );
+			if( preCompiledFileNodeList.Count == 0 )
+			{
+				m_preCompiledHeaderFileName = "StdAfx.h";
+			}
+			else
+			{
+				m_preCompiledHeaderFileName = preCompiledFileNodeList[0].Value;				
+			}
+			int extentionIndex = m_preCompiledHeaderFileName.IndexOf( ".h" );
+			m_preCompiledCppFileName = m_preCompiledHeaderFileName.Substring( 0, extentionIndex ) + ".cpp";
 		}
 
 		private XmlDocument m_projDoc = new XmlDocument();
@@ -110,8 +188,12 @@ namespace UnityBuild
 		private XmlDocument m_filterDoc = new XmlDocument();
 		private XmlNamespaceManager m_filterNsMng = null;
 
-		private string m_projPath = "";
+		private string m_projDirPath = "";
 		private string m_projDir = "";
 		private List<string> m_solutionTypes = new List<string>();
+
+		private string m_preCompiledHeaderFileName = "";
+		private string m_preCompiledCppFileName = "";
+		private bool m_usePreCompiledHeader = false;
 	}
 }

@@ -18,10 +18,10 @@ namespace UnityBuild
 			}
 
 			FileInfo fileInfo = new FileInfo( args[0] );
-			FileInfoIterator fileIter = new FileInfoIterator( fileInfo.Directory.FullName );
+			FileInfoIterator fileIter = new FileInfoIterator( fileInfo.DirectoryName );
 			UnityBuildGenerator generator = new UnityBuildGenerator( 
 					new CppProjectManager( fileInfo.FullName ),
-					args[1], int.Parse( args[1] ) );
+					fileInfo.DirectoryName, int.Parse( args[1] ) );
 
 			for( FileInfo item = fileIter.Next(); item != null; item = fileIter.Next() )
 			{

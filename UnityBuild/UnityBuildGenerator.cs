@@ -9,11 +9,17 @@ namespace UnityBuild
 {
 	class UnityBuildGenerator
 	{
-		public UnityBuildGenerator( CppProjectManager projManager, string targetPath, int chunkSize )
+		public UnityBuildGenerator( CppProjectManager projManager, string projDirPath, int chunkSize )
 		{
 			m_projManager = projManager;
-			m_targetPath = targetPath;
+			m_projDirPath = projDirPath;
+			m_genFolderPath = Path.Combine( m_projDirPath, m_genFileName );
 			m_targetChunkSize = chunkSize;
+
+			Directory.CreateDirectory( m_genFolderPath );
+			m_projManager.MakeFilter( m_genFileName );
+
+			initFile();
 		}
 
 		public void OnEnd()
@@ -26,11 +32,15 @@ namespace UnityBuild
 
 		public void InsertCppFile( FileInfo cppFile )
 		{
-			if( cppFile.Name.IndexOf( m_genFileName ) == 0 )
+			if( m_projManager.IsExist( cppFile ) == false )
+				return;
+
+			if( cppFile.Name.IndexOf( m_genFileName ) == 0 ||
+				cppFile.Name.IndexOf( m_projManager.PreCompiledCppName ) == 0 )
 				return;
 
 			m_projManager.UnSetCompile( cppFile );
-			//여기서 cpp파일을 작성해야 함...
+			m_fileText += $"#include \"..{cppFile.FullName.Substring( m_projDirPath.Length ) }\"\n";
 
 			++m_nowChunkSize;
 			if( m_nowChunkSize >= m_targetChunkSize )
@@ -41,27 +51,35 @@ namespace UnityBuild
 
 		private void createFile()
 		{
-			//string targetFullName = m_targetPath + m_genFileName + m_fileCnt + "cpp";
-			//System.IO.FileInfo file = new System.IO.FileInfo( targetFullName );
+			string targetFullName = Path.Combine( m_genFolderPath, m_genFileName + "_" + m_fileCnt + ".cpp" );
+			System.IO.FileInfo file = new System.IO.FileInfo( targetFullName );
+			file.Directory.Create();
 
-			//if( file.Exists == false )
-			//{
-			//	file.Directory.Create();
-			//	m_projManager.AddFile( file );
-			//}
-			//System.IO.File.WriteAllText( file.FullName, m_fileText );
+			if( m_projManager.IsExist( file ) == false )
+				m_projManager.AddFile( file, m_genFileName );
 
-			//++m_fileCnt;
+			System.IO.File.WriteAllText( file.FullName, m_fileText );
+
+			++m_fileCnt;
+		}
+
+		private void initFile()
+		{
+			m_fileText = "";
+
+			if( m_projManager.UsePreCompiled )
+				m_fileText += $"#include \"{m_projManager.PreCompiledHeaderName}\"\n\n";
 		}
 
 		private CppProjectManager m_projManager = null;
-		private string m_targetPath = "";
+		private string m_projDirPath = "";
+		private string m_genFolderPath = "";
 		private int m_targetChunkSize = 0;
 		private int m_nowChunkSize = 0;
 
 		private int m_fileCnt = 1;
 		private string m_fileText = "";
 
-		private readonly string m_genFileName = "__UnityBuild";
+		private readonly string m_genFileName = "UnityBuild";
 	}
 }

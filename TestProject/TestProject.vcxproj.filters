@@ -6,8 +6,12 @@
     <ClCompile Include="Filter1\TestClass2.cpp">
       <Filter>Filter1</Filter>
     </ClCompile>
+    <ClCompile Include="StdAfx.cpp" />
     <ClCompile Include="Filter1\TestFunc1.cpp">
-      <Filter>Filter1</Filter>
+      <Filter>Filter2</Filter>
+    </ClCompile>
+    <ClCompile Include="UnityBuild\UnityBuild_1.cpp">
+      <Filter>UnityBuild</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -21,7 +25,7 @@
       <UniqueIdentifier>{42183693-0e1f-4937-b547-5bb0e457dd43}</UniqueIdentifier>
     </Filter>
     <Filter Include="UnityBuild">
-      <UniqueIdentifier>{c799c1d0-aeb4-4fd7-85ea-8287ca43f2eb}</UniqueIdentifier>
+      <UniqueIdentifier>{8eb7e2e5-7691-4bf4-b241-8a123398100d}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -29,8 +33,9 @@
     <ClInclude Include="Filter1\TestClass2.h">
       <Filter>Filter1</Filter>
     </ClInclude>
+    <ClInclude Include="StdAfx.h" />
     <ClInclude Include="Filter1\TestFunc1.h">
-      <Filter>Filter1</Filter>
+      <Filter>Filter2</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
