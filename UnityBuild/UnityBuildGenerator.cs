@@ -41,6 +41,8 @@ namespace UnityBuild
 				cppFile.Name.IndexOf( m_projManager.PreCompiledCppName ) == 0 )
 				return;
 
+			eraseIncludePreCompiled( cppFile );
+
 			Console.WriteLine( $"Process : {cppFile.Name}" );
 			m_projManager.UnSetCompile( cppFile );
 			m_fileTextLines.Add( $"#include \"..{cppFile.FullName.Substring( m_projDirPath.Length ) }\"" );
@@ -96,6 +98,28 @@ namespace UnityBuild
 			{
 				m_projManager.DeleteFile( info );
 				info.Delete();
+			}
+		}
+
+		private void eraseIncludePreCompiled( FileInfo cppFile )
+		{
+			if( m_projManager.UsePreCompiled == false )
+				return;
+			
+			List<string> cppText = new List<string>( File.ReadAllLines( cppFile.FullName ) );
+			
+			for( int i = 0; i < cppText.Count; ++i )
+			{
+				if( cppText[i] != "" )
+				{
+					if( cppText[i].IndexOf("#include") != -1 &&
+						cppText[i].IndexOf(m_projManager.PreCompiledHeaderName) != -1 )
+					{
+						cppText.RemoveAt( i );
+						File.WriteAllLines( cppFile.FullName, cppText );
+						return;
+					}
+				}
 			}
 		}
 
