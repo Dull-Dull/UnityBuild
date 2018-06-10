@@ -10,13 +10,13 @@ namespace UnityBuild
 {
 	class CppProjectManager
 	{
-		public CppProjectManager( string projDirPath )
+		public CppProjectManager( string projPath )
 		{
-			m_projDirPath = projDirPath;
-			m_projDir = new FileInfo( m_projDirPath ).Directory.FullName + @"\";
+			m_projPath = projPath;
+			m_projDirPath = new FileInfo( m_projPath ).Directory.FullName + @"\";
 
-			m_projDoc.Load( m_projDirPath );
-			m_filterDoc.Load( m_projDirPath + ".filters" );
+			m_projDoc.Load( m_projPath );
+			m_filterDoc.Load( m_projPath + ".filters" );
 
 			m_projNsMng = new XmlNamespaceManager( m_projDoc.NameTable );
 			m_projNsMng.AddNamespace( "ns", m_projDoc.DocumentElement.NamespaceURI );
@@ -30,13 +30,13 @@ namespace UnityBuild
 
 		public void UnSetCompile( FileInfo cppFile )
 		{
-			string result = cppFile.FullName.Substring( m_projDir.Length );
-			XmlNode clNode = m_projDoc.SelectSingleNode( $"/ns:Project/ns:ItemGroup[2]/ns:ClCompile[@Include='{result}']", m_projNsMng );
+			string result = cppFile.FullName.Substring( m_projDirPath.Length );
+			XmlNode clNode = m_projDoc.SelectSingleNode( $"/ns:Project/ns:ItemGroup/ns:ClCompile[@Include='{result}']", m_projNsMng );
 
 			if( clNode == null )
 				return;
 
-			XmlNodeList exclNodeList = m_projDoc.SelectNodes( $"/ns:Project/ns:ItemGroup[2]/ns:ClCompile[@Include='{result}']/ns:ExcludedFromBuild", m_projNsMng );
+			XmlNodeList exclNodeList = m_projDoc.SelectNodes( $"/ns:Project/ns:ItemGroup/ns:ClCompile[@Include='{result}']/ns:ExcludedFromBuild", m_projNsMng );
 			if( exclNodeList.Count == m_solutionTypes.Count )
 			{
 				bool excluded = true;
@@ -51,6 +51,8 @@ namespace UnityBuild
 				if( excluded == false )
 					return;
 			}
+
+			Console.WriteLine( $"UnSet Compile : {cppFile.Name}" );
 
 			if( exclNodeList.Count != 0 )
 			{
@@ -72,8 +74,8 @@ namespace UnityBuild
 
 		public bool IsExist( FileInfo cppFile )
 		{
-			string filePath = cppFile.FullName.Substring( m_projDir.Length );
-			XmlNode clNode = m_projDoc.SelectSingleNode( $"/ns:Project/ns:ItemGroup[2]/ns:ClCompile[@Include='{filePath}']", m_projNsMng );
+			string filePath = cppFile.FullName.Substring( m_projDirPath.Length );
+			XmlNode clNode = m_projDoc.SelectSingleNode( $"/ns:Project/ns:ItemGroup/ns:ClCompile[@Include='{filePath}']", m_projNsMng );
 
 			if( clNode == null )
 				return false;
@@ -83,16 +85,16 @@ namespace UnityBuild
 
 		public void AddFile( FileInfo cppFile, string filterName )
 		{
-			string filePath = cppFile.FullName.Substring( m_projDir.Length );
+			string filePath = cppFile.FullName.Substring( m_projDirPath.Length );
 			//Append File To Proj
-			XmlNode itemGroupNode = m_projDoc.SelectSingleNode( "/ns:Project/ns:ItemGroup[2]", m_projNsMng );
+			XmlNode itemGroupNode = m_projDoc.SelectSingleNode( "/ns:Project/ns:ItemGroup[ns:ClCompile]", m_projNsMng );
 
 			XmlElement clElement = m_projDoc.CreateElement( "ClCompile", m_projDoc.DocumentElement.NamespaceURI );
 			clElement.SetAttribute( "Include", filePath );
 			itemGroupNode.AppendChild( clElement );
 
 			//Append File To Filter
-			itemGroupNode = m_filterDoc.SelectSingleNode( "/ns:Project/ns:ItemGroup[1]", m_filterNsMng );
+			itemGroupNode = m_filterDoc.SelectSingleNode( "/ns:Project/ns:ItemGroup[ns:ClCompile]", m_filterNsMng );
 
 			clElement = m_filterDoc.CreateElement( "ClCompile", m_filterDoc.DocumentElement.NamespaceURI );
 			itemGroupNode.AppendChild( clElement );
@@ -110,7 +112,7 @@ namespace UnityBuild
 			XmlElement root = m_filterDoc.DocumentElement;
 			XmlNode filterGroupNode = root.ChildNodes[1];
 
-			var node = m_filterDoc.SelectSingleNode( $"/ns:Project/ns:ItemGroup[2]/ns:Filter[@Include='{filterName}']", m_filterNsMng );
+			var node = m_filterDoc.SelectSingleNode( $"/ns:Project/ns:ItemGroup/ns:Filter[@Include='{filterName}']", m_filterNsMng );
 			if( node != null )
 				return;
 
@@ -127,8 +129,8 @@ namespace UnityBuild
 
 		public void Save()
 		{			
-			m_filterDoc.Save( m_projDirPath + ".filters" );
-			m_projDoc.Save( m_projDirPath );
+			m_filterDoc.Save( m_projPath + ".filters" );
+			m_projDoc.Save( m_projPath );
 		}
 
 		public bool UsePreCompiled{
@@ -188,8 +190,8 @@ namespace UnityBuild
 		private XmlDocument m_filterDoc = new XmlDocument();
 		private XmlNamespaceManager m_filterNsMng = null;
 
+		private string m_projPath = "";
 		private string m_projDirPath = "";
-		private string m_projDir = "";
 		private List<string> m_solutionTypes = new List<string>();
 
 		private string m_preCompiledHeaderFileName = "";

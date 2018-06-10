@@ -17,6 +17,11 @@ namespace UnityBuild
 				return;
 			}
 
+			Console.WriteLine( "===== Start Unity Build =====" );
+			Console.WriteLine( "Target : " + args[0] );
+			Console.WriteLine( "ChunkSize : " + args[1] );
+			Console.WriteLine( "" );
+
 			FileInfo fileInfo = new FileInfo( args[0] );
 			FileInfoIterator fileIter = new FileInfoIterator( fileInfo.DirectoryName );
 			UnityBuildGenerator generator = new UnityBuildGenerator( 
@@ -32,6 +37,8 @@ namespace UnityBuild
 			}
 
 			generator.OnEnd();
+
+			Console.WriteLine( "\n===== End Unity Build =====" );
 		}
 	}
 }

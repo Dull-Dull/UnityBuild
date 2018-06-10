@@ -39,6 +39,7 @@ namespace UnityBuild
 				cppFile.Name.IndexOf( m_projManager.PreCompiledCppName ) == 0 )
 				return;
 
+			Console.WriteLine( $"Process : {cppFile.Name}" );
 			m_projManager.UnSetCompile( cppFile );
 			m_fileTextLines.Add( $"#include \"..{cppFile.FullName.Substring( m_projDirPath.Length ) }\"" );
 
@@ -51,16 +52,26 @@ namespace UnityBuild
 
 		private void createFile()
 		{
-			string targetFullName = Path.Combine( m_genFolderPath, m_genFileName + "_" + m_fileCnt + ".cpp" );
-			System.IO.FileInfo file = new System.IO.FileInfo( targetFullName );
+			string targetFileName = m_genFileName + "_" + m_fileCnt + ".cpp";
+			string targetFullPath = Path.Combine( m_genFolderPath, targetFileName );
+			System.IO.FileInfo file = new System.IO.FileInfo( targetFullPath );
 			file.Directory.Create();
 
+			Console.WriteLine( $"Create UnityBuild File : {targetFileName}" );
+
 			if( m_projManager.IsExist( file ) == false )
+			{
 				m_projManager.AddFile( file, m_genFileName );
+				Console.WriteLine( $"Add File To Project : {m_genFileName}" );
+			}
 			
 			System.IO.File.WriteAllLines( file.FullName, m_fileTextLines.ToArray() );
+			Console.WriteLine( $"Write File : {targetFileName}" );
 
 			++m_fileCnt;
+
+			initFile();
+			m_nowChunkSize = 0;
 		}
 
 		private void initFile()
