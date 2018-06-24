@@ -23,17 +23,16 @@ namespace UnityBuild
 			Console.WriteLine( "" );
 
 			FileInfo fileInfo = new FileInfo( args[0] );
-			FileInfoIterator fileIter = new FileInfoIterator( fileInfo.DirectoryName );
-			UnityBuildGenerator generator = new UnityBuildGenerator( 
-					new CppProjectManager( fileInfo.FullName ),
-					fileInfo.DirectoryName, int.Parse( args[1] ) );
 
-			for( FileInfo item = fileIter.Next(); item != null; item = fileIter.Next() )
+			CppProjectManager projManager = new CppProjectManager( fileInfo.FullName );
+			UnityBuildGenerator generator = new UnityBuildGenerator(
+					projManager, fileInfo.DirectoryName, int.Parse( args[1] ) );
+
+			List<string> cppFileCon = projManager.GetCppFilePathCon();
+
+			foreach( string cppFilePath in cppFileCon )
 			{
-				if( item.Extension == ".cpp" )
-				{
-					generator.InsertCppFile( item );
-				}
+				generator.InsertCppFile( cppFilePath );
 			}
 
 			generator.OnEnd();
