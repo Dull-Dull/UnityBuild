@@ -28,15 +28,29 @@ namespace UnityBuild
 			getPreCompiled();
 		}
 
-		public void UnSetCompile( FileInfo cppFile )
+		public List<string> GetCppFilePathCon()
 		{
-			string result = cppFile.FullName.Substring( m_projDirPath.Length );
-			XmlNode clNode = m_projDoc.SelectSingleNode( $"/ns:Project/ns:ItemGroup/ns:ClCompile[@Include='{result}']", m_projNsMng );
+			List<string> filePathCon = new List<string>();
+
+			XmlNodeList exclNodeList = m_projDoc.SelectNodes( $"ns:Project/ns:ItemGroup/ns:ClCompile", m_projNsMng );
+
+			foreach( XmlNode node in exclNodeList )
+			{
+				var attr = node.Attributes.GetNamedItem( "Include" );
+				filePathCon.Add( attr.Value );
+			}
+
+			return filePathCon;
+		}
+
+		public void UnSetCompile( string cppFile )
+		{
+			XmlNode clNode = m_projDoc.SelectSingleNode( $"/ns:Project/ns:ItemGroup/ns:ClCompile[@Include='{cppFile}']", m_projNsMng );
 
 			if( clNode == null )
 				return;
 
-			XmlNodeList exclNodeList = m_projDoc.SelectNodes( $"/ns:Project/ns:ItemGroup/ns:ClCompile[@Include='{result}']/ns:ExcludedFromBuild", m_projNsMng );
+			XmlNodeList exclNodeList = m_projDoc.SelectNodes( $"/ns:Project/ns:ItemGroup/ns:ClCompile[@Include='{cppFile}']/ns:ExcludedFromBuild", m_projNsMng );
 			if( exclNodeList.Count == m_solutionTypes.Count )
 			{
 				bool excluded = true;
@@ -52,7 +66,7 @@ namespace UnityBuild
 					return;
 			}
 
-			Console.WriteLine( $"UnSet Compile : {cppFile.Name}" );
+			Console.WriteLine( $"UnSet Compile : {cppFile}" );
 
 			if( exclNodeList.Count != 0 )
 			{

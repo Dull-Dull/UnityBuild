@@ -32,20 +32,18 @@ namespace UnityBuild
 			m_projManager.Save();
 		}
 
-		public void InsertCppFile( FileInfo cppFile )
+		public void InsertCppFile( string cppFile )
 		{
-			if( m_projManager.IsExist( cppFile ) == false )
+			FileInfo cppFileInfo = new FileInfo( Path.Combine( m_projDirPath, cppFile ) );
+			if( cppFileInfo.Name.ToLower().IndexOf( m_genFileName.ToLower() ) == 0 ||
+				cppFileInfo.Name.ToLower().IndexOf( m_projManager.PreCompiledCppName.ToLower() ) == 0 )
 				return;
 
-			if( cppFile.Name.IndexOf( m_genFileName ) == 0 ||
-				cppFile.Name.IndexOf( m_projManager.PreCompiledCppName ) == 0 )
-				return;
+			modifyCppFile( cppFileInfo );
 
-			eraseIncludePreCompiled( cppFile );
-
-			Console.WriteLine( $"Process : {cppFile.Name}" );
+			Console.WriteLine( $"Process : {cppFileInfo.Name}" );
 			m_projManager.UnSetCompile( cppFile );
-			m_fileTextLines.Add( $"#include \"..{cppFile.FullName.Substring( m_projDirPath.Length ) }\"" );
+			m_fileTextLines.Add( $"#include \"..\\{cppFile}\"" );
 
 			++m_nowChunkSize;
 			if( m_nowChunkSize >= m_targetChunkSize )
@@ -92,35 +90,36 @@ namespace UnityBuild
 		private void deleteUnityBuildFiles()
 		{
 			DirectoryInfo unityBuildFolder = new DirectoryInfo( m_genFolderPath );
-			FileInfo[] files = unityBuildFolder.GetFiles();
-
-			foreach( FileInfo info in files )
+			if( unityBuildFolder.Exists )
 			{
-				m_projManager.DeleteFile( info );
-				info.Delete();
+				FileInfo[] files = unityBuildFolder.GetFiles();
+
+				foreach( FileInfo info in files )
+				{
+					m_projManager.DeleteFile( info );
+					info.Delete();
+				}
 			}
 		}
 
-		private void eraseIncludePreCompiled( FileInfo cppFile )
+		private void modifyCppFile( FileInfo cppFile )
 		{
-			if( m_projManager.UsePreCompiled == false )
-				return;
-			
-			List<string> cppText = new List<string>( File.ReadAllLines( cppFile.FullName ) );
-			
-			for( int i = 0; i < cppText.Count; ++i )
+			List<string> cppTextLines = new List<string>( File.ReadAllLines( cppFile.FullName, Encoding.GetEncoding( 51949 ) ) );
+
+			//erase include precompile
+			if( m_projManager.UsePreCompiled )
 			{
-				if( cppText[i] != "" )
-				{
-					if( cppText[i].IndexOf("#include") != -1 &&
-						cppText[i].IndexOf(m_projManager.PreCompiledHeaderName) != -1 )
-					{
-						cppText.RemoveAt( i );
-						File.WriteAllLines( cppFile.FullName, cppText );
-						return;
-					}
-				}
+				cppTextLines.RemoveAll( ( line ) => ( line.ToLower().IndexOf( "#include" ) != -1 &&
+				line.ToLower().IndexOf( m_projManager.PreCompiledHeaderName.ToLower() ) != -1 ) );
 			}
+
+			//erase comment
+			cppTextLines.RemoveAll( ( line ) => ( line.ToLower().IndexOf( $"//{m_genFileName}_" ) != -1 ) );
+
+			//write comment
+			cppTextLines.Insert( 0, $"//{m_genFileName}_{m_fileCnt}.cpp" );
+
+			File.WriteAllLines( cppFile.FullName, cppTextLines, Encoding.GetEncoding( 51949 ) );
 		}
 
 		private CppProjectManager m_projManager = null;
