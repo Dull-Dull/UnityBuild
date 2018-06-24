@@ -16,6 +16,7 @@ namespace UnityBuild
 			m_genFolderPath = Path.Combine( m_projDirPath, m_genFileName );
 			m_targetChunkSize = chunkSize;
 
+			parseIgnorList();
 			deleteUnityBuildFiles();
 
 			Directory.CreateDirectory( m_genFolderPath );
@@ -36,7 +37,8 @@ namespace UnityBuild
 		{
 			FileInfo cppFileInfo = new FileInfo( Path.Combine( m_projDirPath, cppFile ) );
 			if( cppFileInfo.Name.ToLower().IndexOf( m_genFileName.ToLower() ) == 0 ||
-				cppFileInfo.Name.ToLower().IndexOf( m_projManager.PreCompiledCppName.ToLower() ) == 0 )
+				cppFileInfo.Name.ToLower().IndexOf( m_projManager.PreCompiledCppName.ToLower() ) == 0 ||
+				m_ignorFileCon.Contains( cppFile.ToLower() ) )
 				return;
 
 			modifyCppFile( cppFileInfo );
@@ -87,6 +89,20 @@ namespace UnityBuild
 			}				
 		}
 
+		private void parseIgnorList()
+		{
+			const string ignoreFile = @".\UnityIgnore.conf";
+
+			if( File.Exists( ignoreFile ) )
+			{
+				var lines = File.ReadAllLines( ignoreFile );
+				foreach( string line in lines )
+				{
+					m_ignorFileCon.Add( line.ToLower() );
+				}				
+			}
+		}
+
 		private void deleteUnityBuildFiles()
 		{
 			DirectoryInfo unityBuildFolder = new DirectoryInfo( m_genFolderPath );
@@ -132,5 +148,7 @@ namespace UnityBuild
 		private List<string> m_fileTextLines = new List<string>();
 
 		private readonly string m_genFileName = "UnityBuild";
+
+		private HashSet<string> m_ignorFileCon = new HashSet<string>();
 	}
 }
