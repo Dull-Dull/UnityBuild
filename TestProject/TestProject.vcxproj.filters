@@ -13,6 +13,9 @@
     <ClCompile Include="UnityBuild\UnityBuild_1.cpp">
       <Filter>UnityBuild</Filter>
     </ClCompile>
+    <ClCompile Include="UnityBuild\UnityBuild_2.cpp">
+      <Filter>UnityBuild</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Filter1">
@@ -25,7 +28,7 @@
       <UniqueIdentifier>{42183693-0e1f-4937-b547-5bb0e457dd43}</UniqueIdentifier>
     </Filter>
     <Filter Include="UnityBuild">
-      <UniqueIdentifier>{8eb7e2e5-7691-4bf4-b241-8a123398100d}</UniqueIdentifier>
+      <UniqueIdentifier>{5ca397c5-6e06-4e80-9088-886caf19ec76}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>

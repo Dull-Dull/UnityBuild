@@ -173,6 +173,7 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="UnityBuild\UnityBuild_1.cpp" />
+    <ClCompile Include="UnityBuild\UnityBuild_2.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Filter1\TestClass2.h" />
